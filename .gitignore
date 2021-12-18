@@ -1,0 +1,10 @@
+.gitattributes
+venv/
+*_btcrop*
+__pycache__/
+*.pyc
+docs/localdocs/
+examples/.DS_Store
+.DS_Store
+.idea/
+
