@@ -20,16 +20,18 @@ parser.add_argument('-d', '--arg_directory',
 parser.add_argument('-f', '--file',
                     help="Path of image to crop (can't use with -d arg)")
 parser.add_argument('-r', '--resolution',
-                    help="Desired resolution (e.g. 1080x1350)")
+                    help="Desired resolution (e.g. 1080x1350) (can't use "
+                         "with -a arg)")
 parser.add_argument('-a', '--aspect',
-                    help="Desired aspect ratio (e.g. 3:2")
+                    help="Desired aspect ratio (e.g. 3:2) (can't use "
+                         "with -r arg)")
 parser.add_argument('-c', '--color',
                     help="Canva background color (e.g. #777777) "
                          "(default: #FFFFFF)",
                     default='#FFFFFF')
 parser.add_argument('-e', '--extension',
                     help="File extension to crop (e.g. .jpeg or "
-                         ".jpeg,.png) (default: most common image format)",
+                         ".jpeg,.png) (default: most common image formats)",
                     default='.jpeg,.jpg,.png')
 parser.add_argument('-o', '--overwrite',
                     action='store_true',
