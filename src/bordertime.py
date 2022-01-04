@@ -77,7 +77,7 @@ def is_image(abs_path):
     if os.path.isfile(abs_path):
         path_obj = Path(os.path.basename(abs_path))
         file_ext = path_obj.suffix
-        if file_ext in ('.jpeg', '.jpg', '.png'):
+        if file_ext in arg_file_ext:
             return True
         else:
             return False
