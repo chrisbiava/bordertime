@@ -144,9 +144,9 @@ for user_path in filepaths:
         left_margin = negative_space // 2
         img_canvas.paste(img_resized, (left_margin, 0))
     elif img_ratio_is_horizontal:
-        if not arg_ratio_is_horizontal:
+        if not arg_ratio_is_horizontal and not arg_ratio_is_square:
             _logger.warning('Skipping img "{}" because image is horizontal, '
-                            'but input aspect ratio is not'.format(user_fname))
+                            'but input aspect ratio is neither horizontal nor square'.format(user_fname))
             continue
 
         if canvas_wdt > img_wdt:
