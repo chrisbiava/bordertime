@@ -2,8 +2,12 @@ import os
 from PIL import Image, ImageColor
 from pathlib import Path
 import argparse
-# import bt_exceptions
 from bt_logger import _logger
+
+
+from bt_exceptions import BadResolution
+print(BadResolution.feole)
+
 
 # TODO __name__ == 'main'
 
@@ -47,15 +51,19 @@ arg_file_ext = args.extension
 arg_file_ext = arg_file_ext.split(',')
 
 arg_resolution = args.resolution
-arg_resolution_px = arg_resolution.lower().split('x')
-# TODO aspect management
-arg_aspect = args.aspect
+
+arg_aspect_ratio = args.aspect
+
 args_overwrite = args.overwrite
 
 if all([arg_directory, arg_file]):
     raise Exception('Source must be arg_directory OR file, you used both')
-if all([args.resolution, args.aspect]):
+if all([arg_resolution, arg_aspect_ratio]):
     raise Exception('Mode must be by resolution OR by aspect, you used both')
+if not any([arg_directory, arg_file]):
+    raise Exception('You must specify a directory OR a file')
+if not any([arg_resolution, arg_aspect_ratio]):
+    raise Exception('You must specify a resolution OR an aspect ratio')
 
 if not os.path.isdir(arg_directory):
     raise Exception(f'No folder "{arg_directory}" found')
@@ -66,10 +74,6 @@ if not (arg_color.startswith('#') and arg_color[1:].isalnum() and
 
 if not all(map(lambda x: x.startswith('.'), arg_file_ext)):
     raise Exception('All extensions must start with "."')
-
-if len(arg_resolution_px) != 2:
-    raise Exception('Wrong resolution format, expecting smth like '
-                    '1350x1080, got {}'.format(arg_resolution))
 
 filepaths = [os.path.join(arg_directory, fname) for fname in
              os.listdir(arg_directory)]
@@ -101,16 +105,52 @@ for user_path in filepaths:
     img_ratio_is_horizontal = img_wdt > img_hgt
     img_ratio_is_square = img_hgt == img_wdt
 
-    arg_wdt = int(arg_resolution_px[0])
-    arg_hgt = int(arg_resolution_px[1])
-
-    arg_ratio_is_vertical = arg_hgt > arg_wdt
-    arg_ratio_is_horizontal = arg_wdt > arg_hgt
-    arg_ratio_is_square = arg_hgt == arg_wdt
+    if arg_aspect_ratio:
+        aspect_ratio = arg_aspect_ratio.split('/')
+        if len(aspect_ratio) != 2:
+            raise Exception(
+                'Wrong aspect ratio format, expecting something like '
+                '4/5, got {}'.format(arg_resolution))
 
     canvas_background: tuple = ImageColor.getrgb(arg_color)
+    if arg_resolution:
+        if arg_resolution == 'long_edge':
+            arg_wdt_px = arg_hgt_px = img_wdt
+        else:
+            resolution_px = arg_resolution.lower().split('x')
+            if len(resolution_px) != 2:
+                raise Exception(
+                    'Wrong resolution format, expecting something like '
+                    '1350x1080, got {} or long_edge'.format(arg_resolution))
+            arg_wdt_px = int(resolution_px[0])
+            arg_hgt_px = int(resolution_px[1])
 
-    img_canvas = Image.new('RGB', (arg_wdt, arg_hgt), canvas_background)
+
+        arg_ratio_is_vertical = arg_hgt_px > arg_wdt_px
+        arg_ratio_is_horizontal = arg_wdt_px > arg_hgt_px
+        arg_ratio_is_square = arg_hgt_px == arg_wdt_px
+
+    elif arg_aspect_ratio:
+        arg_wdt_ratio = int(aspect_ratio[0])
+        arg_hgt_ratio = int(aspect_ratio[1])
+        arg_ratio_is_vertical = arg_hgt_ratio > arg_wdt_ratio
+        arg_ratio_is_horizontal = arg_wdt_ratio > arg_hgt_ratio
+        arg_ratio_is_square = arg_hgt_ratio == arg_wdt_ratio
+        factor = arg_wdt_ratio / arg_hgt_ratio
+        if img_ratio_is_horizontal:
+            arg_wdt_px = img_wdt
+            arg_hgt_px = round(img_wdt / factor)
+        elif img_ratio_is_vertical:
+            arg_hgt_px = img_hgt
+            arg_wdt_px = round(img_hgt / factor)
+        else:
+            raise Exception('Crop by aspect ratio is not supported yet '
+                            'for horizontal images')
+
+    img_canvas = Image.new(
+        'RGB', (arg_wdt_px, arg_hgt_px), canvas_background
+    )
+
     canvas_wdt = img_canvas.width
     canvas_hgt = img_canvas.height
 
@@ -130,8 +170,10 @@ for user_path in filepaths:
     img_resized = img
     if img_ratio_is_vertical:
         if not arg_ratio_is_vertical:
-            _logger.warning('Skipping img "{}" because image is vertical, '
-                            'but input aspect ratio is not'.format(user_fname))
+            _logger.warning(
+                'Skipping img "{}" because image is vertical, '
+                'but input aspect ratio is not'.format(user_fname)
+            )
             continue
         if canvas_hgt > img_hgt:
             _logger.error("Image height is smaller than canvas' height"
@@ -145,8 +187,11 @@ for user_path in filepaths:
         img_canvas.paste(img_resized, (left_margin, 0))
     elif img_ratio_is_horizontal:
         if not arg_ratio_is_horizontal and not arg_ratio_is_square:
-            _logger.warning('Skipping img "{}" because image is horizontal, '
-                            'but input aspect ratio is neither horizontal nor square'.format(user_fname))
+            _logger.warning(
+                'Skipping img "{}" because image is horizontal, '
+                'but input aspect ratio is neither horizontal nor '
+                'square'.format(user_fname)
+            )
             continue
 
         if canvas_wdt > img_wdt:
