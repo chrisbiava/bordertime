@@ -6,7 +6,7 @@ from bt_logger import _logger
 
 
 from bt_exceptions import BadResolution
-print(BadResolution.feole)
+
 
 
 # TODO __name__ == 'main'
