@@ -24,7 +24,7 @@ def is_image(abs_path):
         return False
 
 
-@Gooey
+# @Gooey
 def main():
     parser = argparse.ArgumentParser(description="Bordertime", add_help=False)
     parser.add_argument('-v', '--version', action='version',
